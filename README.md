@@ -1,71 +1,42 @@
-# Домашнее задание к занятию "`8-02_Система_мониторинга_Zabbix`" - `Savin Aleksey`
+# Домашнее задание к занятию "`Репликация и масштабирование. Часть 1`" - `Савин Алексей`
 
-### Задание 1
-Установите Zabbix Server с веб-интерфейсом.
+## Задание 1
 
-***Процесс выполнения***
-1. Выполняя ДЗ, сверяйтесь с процессом отражённым в записи лекции.
-2. Установите PostgreSQL. Для установки достаточна та версия, что есть в системном репозитороии Debian 11.
-3. Пользуясь конфигуратором команд с официального сайта, составьте набор команд для установки последней версии Zabbix с поддержкой PostgreSQL и Apache.
-4. Выполните все необходимые команды для установки Zabbix Server и Zabbix Web Server.
-   
-***Требования к результату***
-
-1. Прикрепите в файл README.md скриншот авторизации в админке.
-2. Приложите в файл README.md текст использованных команд в GitHub.
-
+На лекции рассматривались режимы репликации master-slave, master-master, опишите их различия.
 
 ### Решение 1
-![zabbix](https://github.com/AI-Savin/Netology_hw_8.02/blob/main/img/zabbix.png)  
 
- **команды**  
- 
- `sudo apt install postgresql`  
- `wget https://repo.zabbix.com/zabbix/6.0/debian/pool/main/z/zabbix-release/zabbix-release_6.0-5+debian12_all.deb`   
- `sudo dpkg -i zabbix-release_6.0-5+debian12_all.deb`  
- `sudo apt update`  
- `sudo apt install zabbix-server-pgsql zabbix-frontend-php php8.2-pgsql zabbix-apache-conf zabbix-sql-scripts`  
- `sudo -u postgres createuser --pwprompt zabbix`  
- `sudo -u postgres createdb -O zabbix zabbix`  
- `zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql zabbix`  
- `sudo nano /etc/zabbix/zabbix_server.conf`  
- `sudo systemctl restart zabbix-server apache2`  
- `sudo systemctl enable zabbix-server apache2`  
+Основное отличите между master-slave и master-master заключается в работе с данными. master-slave Предполагает работу с мастером только для запиис или изменения данных (INSERT/UPDATE/DELETE), чтение же данных производится со slave. В случае схемы master-master любой из серверов может использоваться как для чтения так и для записи. Преимуществом master-slave является возможность использования множества серверов slave (не рекомендуется использовать более 20) для работы с одним сервером master, что снижает общую нагрузку.
+Система master-slave считается наиболее безопасной в плане сохранности данных. В случае выхода из строя master, нужно переключить все операции (и чтения и записи) на slave. Таким образом он станет новым master. Данные при этом не теряются. В случае master-master выход из строя одного из серверов практически всегда приводит к потере каких-то данных. Последующее восстановление также сильно затрудняется необходимостью ручного анализа данных, которые успели либо не успели скопироваться.
  
 ---
 
-### Задание 2
-Установите Zabbix Agent на два хоста.
+## Задание 2
+Выполните конфигурацию master-slave репликации, примером можно пользоваться из лекции.
 
-***Процесс выполнения***
-1. Выполняя ДЗ, сверяйтесь с процессом отражённым в записи лекции.
-2. Установите Zabbix Agent на 2 вирт.машины, одной из них может быть ваш Zabbix Server.
-3. Добавьте Zabbix Server в список разрешенных серверов ваших Zabbix Agentов.
-4. Добавьте Zabbix Agentов в раздел Configuration > Hosts вашего Zabbix Servera.
-5. Проверьте, что в разделе Latest Data начали появляться данные с добавленных агентов.
-   
-***Требования к результату***  
-
-1. Приложите в файл README.md скриншот раздела Configuration > Hosts, где видно, что агенты подключены к серверу
-2. Приложите в файл README.md скриншот лога zabbix agent, где видно, что он работает с сервером
-3. Приложите в файл README.md скриншот раздела Monitoring > Latest data для обоих хостов, где видны поступающие от агентов данные.
-4. Приложите в файл README.md текст использованных команд в GitHub 
+Приложите скриншоты конфигурации, выполнения работы: состояния и режимы работы серверов.
 
 ### Решение 2
+В докере запустил сервер мастера. Создал пользователя и настроил мастера. Чтение бинарного файла mysql-bin.000007 slave должен начать со строки 658.  
 
-![zabbix_agents](https://github.com/AI-Savin/Netology_hw_8.02/blob/main/img/zabbix_agents.png)  
-![zabbix_logs_vm2](https://github.com/AI-Savin/Netology_hw_8.02/blob/main/img/log_zabbix_agent_vm2.png)  
-![zabbix_logs_vm3](https://github.com/AI-Savin/Netology_hw_8.02/blob/main/img/log_zabbix_agent_vm3.png)  
-![zabbix_agents_monitor](https://github.com/AI-Savin/Netology_hw_8.02/blob/main/img/zabbix_agents_monitor.png)  
+![Task_2_1](https://github.com/AI-Savin/hw_Replic_and_scaling_1/blob/main/img/Task_2_1.png)  
 
-**команды**  
+Запустил сервер слэйва, указал настройки для подключения с мастеру. Результат работы без ошибок представлен на скриншоте ниже:  
 
-`wget https://repo.zabbix.com/zabbix/6.0/debian/pool/main/z/zabbix-release/zabbix-release_6.0-5+debian12_all.deb`  
-`sudo dpkg -i zabbix-release_6.0-5+debian12_all.deb`  
-`sudo apt update`  
-`sudo systemctl status zabbix-agent`  
-`sudo find / -name zabbix_agentd.conf`  
-`sudo sed -i 's/Server=127.0.0.1/Server=192.168.3.9/g' /etc/zabbix/zabbix_agentd.conf`  
-`sudo systemctl restart zabbix-agent`  
-`sudo systemctl status zabbix-agent`  
-`sudo tail -f /var/log/zabbix/zabbix_agentd.log`  
+![Task_2_2](https://github.com/AI-Savin/hw_Replic_and_scaling_1/blob/main/img/Task_2_2.png)  
+
+Создал на мастере базу my_base_test.  
+
+![Task_2_3](https://github.com/AI-Savin/hw_Replic_and_scaling_1/blob/main/img/Task_2_3.png)  
+
+slave прочитал данные из файла mysql-bin.000007 и воспроизвёл изменение у себя.  
+
+![Task_2_4](https://github.com/AI-Savin/hw_Replic_and_scaling_1/blob/main/img/Task_2_4.png)  
+
+При этом изменился номер строчки в бинарном файле.  
+
+![Task_2_5](https://github.com/AI-Savin/hw_Replic_and_scaling_1/blob/main/img/Task_2_5.png)  
+
+![Task_2_6](https://github.com/AI-Savin/hw_Replic_and_scaling_1/blob/main/img/Task_2_6.png)   
+
+---
